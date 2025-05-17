@@ -14,10 +14,12 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.15.17",
+    "@types/node-fetch": "^2.6.12",
     "typescript": "latest"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
+    "node-fetch": "^2.7.0",
     "zod": "latest"
   }
 }
