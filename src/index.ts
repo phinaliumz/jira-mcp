@@ -167,8 +167,94 @@ server.tool(
     projectKey: z.string().describe("The key of the Jira project (e.g., 'PROJ')"),
     summary: z.string().describe("A brief summary of the issue"),
     description: z.string().optional().describe("A detailed description of the issue"),
+    issueType: z.string().optional().describe("The issue type name (e.g., 'Task', 'Story', 'Bug')"),
   },
-  async ({ projectKey, summary, description }) => {
+  async ({ projectKey, summary, description, issueType }) => {
+    const jiraBaseUrl = process.env.JIRA_BASE_URL?.trim();
+    const jiraApiToken = process.env.JIRA_API_TOKEN?.trim();
+    const jiraEmail = process.env.JIRA_EMAIL?.trim();
+
+    if (!jiraBaseUrl || !jiraApiToken || !jiraEmail) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "JIRA_BASE_URL, JIRA_API_TOKEN, and JIRA_EMAIL environment variables must be set.",
+          },
+        ],
+      };
+    }
+
+    // Use "Task" as default issue type if not provided
+    const issueTypeName = issueType || "Task";
+
+    // Format description as Atlassian Document Format (ADF) if provided
+    const adfDescription = description
+      ? {
+          type: "doc",
+          version: 1,
+          content: [
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: description,
+                },
+              ],
+            },
+          ],
+        }
+      : undefined;
+
+    const response = await fetch(`${jiraBaseUrl}/rest/api/3/issue`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${jiraEmail}:${jiraApiToken}`).toString("base64")}`,
+        Accept: "application/json",
+        "Accept-Language": "en-US",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fields: {
+          project: { key: projectKey },
+          summary: summary,
+          description: adfDescription,
+          issuetype: { name: issueTypeName },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Failed to create issue: ${response.statusText}. Details: ${errorBody}`,
+          },
+        ],
+      };
+    }
+
+    const data = await response.json();
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Issue created successfully! Key: ${data.key}`,
+        },
+      ],
+    };
+  }
+);
+
+// Add a tool to list all visible Jira projects
+server.tool(
+  "list-projects",
+  "List all Jira projects visible to the current user",
+  {},
+  async () => {
     const jiraBaseUrl = process.env.JIRA_BASE_URL;
     const jiraApiToken = process.env.JIRA_API_TOKEN;
     const jiraEmail = process.env.JIRA_EMAIL;
@@ -184,41 +270,34 @@ server.tool(
       };
     }
 
-    const response = await fetch(`${jiraBaseUrl}/rest/api/3/issue`, {
-      method: "POST",
+    const response = await fetch(`${jiraBaseUrl}/rest/api/3/project/search`, {
+      method: "GET",
       headers: {
         Authorization: `Basic ${Buffer.from(`${jiraEmail}:${jiraApiToken}`).toString("base64")}`,
         Accept: "application/json",
         "Accept-Language": "en-US",
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        fields: {
-          project: { key: projectKey },
-          summary,
-          description,
-          issuetype: { name: "Task" },
-        },
-      }),
     });
 
     if (!response.ok) {
+      const errorBody = await response.text();
       return {
         content: [
           {
             type: "text",
-            text: `Failed to create issue: ${response.statusText}`,
+            text: `Failed to list projects: HTTP ${response.status} ${response.statusText}. Details: ${errorBody}`,
           },
         ],
       };
     }
 
     const data = await response.json();
+    const projects = (data.values || data.projects || []).map((p: any) => `Key: ${p.key}, Name: ${p.name}`).join("\n");
     return {
       content: [
         {
           type: "text",
-          text: `Issue created successfully! Key: ${data.key}`,
+          text: projects || "No projects found.",
         },
       ],
     };
