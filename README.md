@@ -33,18 +33,17 @@ This project implements a Model Context Protocol (MCP) server in TypeScript for 
      - `OPENAI_API_KEY`: Your OpenAI API key (for natural language queries)
    - When using with VS Code, these are prompted via `.vscode/mcp.json`.
 
-4. **Start the server**
-   - Locally:
+4. **Build the server**
+   - Before running, you must build the TypeScript project:
      ```sh
      npm run build
-     node build/index.js
      ```
-   - Or via the provided `start-server.sh` script (used by VS Code MCP integration).
+   - This compiles the TypeScript source into JavaScript in the `build/` directory.
 
 5. **Using in VS Code**
    - Open the project in VS Code.
    - Ensure you have the Model Context Protocol extension installed.
-   - The `.vscode/mcp.json` file will prompt you for your Jira credentials and OpenAI API key, then launch the server.
+   - The `.vscode/mcp.json` file will prompt you for your Jira credentials and OpenAI API key, then launch the server using the npm script.
    - Use the MCP panel to access tools:
      - `list-projects`: List all accessible Jira projects
      - `query-issues`: Fetch issues by natural language (OpenAI-powered JQL conversion)
@@ -52,7 +51,7 @@ This project implements a Model Context Protocol (MCP) server in TypeScript for 
 
 ## Example `.vscode/mcp.json`
 
-Below is an example configuration for VS Code integration. This will prompt you for your Jira credentials and OpenAI API key, then launch the MCP server:
+Below is an example configuration for VS Code integration. This will prompt you for your Jira credentials and OpenAI API key, then launch the MCP server using the npm script:
 
 ```jsonc
 {
@@ -83,7 +82,11 @@ Below is an example configuration for VS Code integration. This will prompt you 
     "servers": {
         "jira-mcp": {
             "type": "stdio",
-            "command": "/path-to/start-server.sh",
+            "command": "sh",
+            "args": [
+                "-c",
+                "cd \"${workspaceFolder}\" && npm run start"
+            ],
             "env": {
                 "JIRA_API_TOKEN": "${input:jira-key}",
                 "JIRA_BASE_URL": "${input:jira-base-url-key}",
@@ -95,12 +98,18 @@ Below is an example configuration for VS Code integration. This will prompt you 
 }
 ```
 
-## Docker Usage
-A `Dockerfile` is provided for containerized deployment. Build and run with:
-```sh
-docker build -t jira-mcp .
-docker run -e JIRA_API_TOKEN=... -e JIRA_BASE_URL=... -e JIRA_EMAIL=... -e OPENAI_API_KEY=... jira-mcp
+## VS Code Integration Tip
+If you want your MCP server to work for anyone who clones the repository, make sure your `.vscode/mcp.json` server command uses:
+
+```jsonc
+"command": "sh",
+"args": [
+    "-c",
+    "cd \"${workspaceFolder}\" && npm run start"
+]
 ```
+
+This ensures the server always starts in the correct directory, regardless of where the project is cloned. `${workspaceFolder}` is replaced by VS Code with the root of the opened project. For users running outside VS Code, instruct them to start the server from the project root.
 
 ## Troubleshooting
 - If you see "No projects found", check your Jira API token, email, and permissions.
