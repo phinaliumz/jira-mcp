@@ -6,19 +6,17 @@ This project implements a Model Context Protocol (MCP) server in TypeScript for 
 - Query Jira issues using natural language (OpenAI-powered JQL conversion)
 - Create new Jira issues in any accessible project
 - List all Jira projects visible to the current user
-- Robust error handling and debug logging
-- Docker and local deployment support
 
 ## Prerequisites
 - Node.js (v18+ recommended)
 - A Jira Cloud account with API access
-- A Jira API token (generate at https://id.atlassian.com/manage-profile/security/api-tokens)
+- A Jira API token
 - (Optional, but recommended) An OpenAI API key for natural language queries
 
 ## Setup
 1. **Clone the repository**
    ```sh
-   git clone <your-repo-url>
+   git clone https://github.com/phinaliumz/jira-mcp.git
    cd jira-mcp
    ```
 2. **Install dependencies**
@@ -42,8 +40,7 @@ This project implements a Model Context Protocol (MCP) server in TypeScript for 
 
 5. **Using in VS Code**
    - Open the project in VS Code.
-   - Ensure you have the Model Context Protocol extension installed.
-   - The `.vscode/mcp.json` file will prompt you for your Jira credentials and OpenAI API key, then launch the server using the npm script.
+   - Create `.vscode/mcp.json` file like in the example - it will prompt you for your Jira credentials and OpenAI API key, then launch the server using the npm script.
    - Use the MCP panel to access tools:
      - `list-projects`: List all accessible Jira projects
      - `query-issues`: Fetch issues by natural language (OpenAI-powered JQL conversion)
@@ -109,7 +106,7 @@ If you want your MCP server to work for anyone who clones the repository, make s
 ]
 ```
 
-This ensures the server always starts in the correct directory, regardless of where the project is cloned. `${workspaceFolder}` is replaced by VS Code with the root of the opened project. For users running outside VS Code, instruct them to start the server from the project root.
+This ensures the server always starts in the correct directory, regardless of where the project is cloned. `${workspaceFolder}` is replaced by VS Code with the root of the opened project. 
 
 ## Troubleshooting
 - If you see "No projects found", check your Jira API token, email, and permissions.
